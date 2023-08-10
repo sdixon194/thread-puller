@@ -34,46 +34,53 @@ module.exports = {
 			  return acc;
 			});
 		  
-		const subcommand = interaction.options.getSubcommand();
-		// If the subcommand is active, set activeOnly to true.
-		switch (subcommand) {
-			case 'active':
+			const subcommand = interaction.options.getSubcommand();
+			// If the subcommand is active, set activeOnly to true.
+			switch (subcommand) {
+			  case 'active':
 				threads = combinedThreads.activeThreads.threads;
 				break;
-			case 'archived':
+			  case 'archived':
 				threads = combinedThreads.archivedThreads.threads;
 				break;
-			case 'all':
-			case 'default':
+			  case 'all':
+			  case 'default':
 				threads = combinedThreads.activeThreads.threads.concat(combinedThreads.archivedThreads.threads);
 				break;
-		}
-
-		if ( !threads.size ) {
-			await interaction.reply(`No threads to pull!`);
-			return;
-		}
-		
-        const threadsByParent = {};
-        threads.forEach(t => {
-            if (!threadsByParent[t.parent.name]) threadsByParent[t.parent.name] = [];
-            threadsByParent[t.parent.name].push(t);
-        });
-        const threadList = Object.entries(threadsByParent).map(([parentName, threadList]) => {
-            const threadListStr = threadList.map(t => `<#${t.id}>`).join('\n');
-            return `**${parentName}**\n${threadListStr}`;
-        }).join('\n\n');
-
-		let message = subcommand.charAt(0).toUpperCase() + subcommand.slice(1);
-		if ( subcommand === 'all' ) {
-			message = 'Active and archived';
-		}
-
-        await interaction.reply(
-			{
-				content: `${message} threads in ${interaction.guild.name}:\n\n${threadList}`,
-				ephemeral: true
 			}
-		);
-    },
+		  
+			if (!threads.size) {
+			  await interaction.reply(`No threads to pull!`);
+			  return;
+			}
+		  
+			// Update thread names to include parent name
+			await Promise.all(threads.map(async (thread) => {
+			  if (!thread.name) {
+				const fetchedThread = await thread.fetch();
+				thread.name = fetchedThread.name;
+			  }
+			  //console.log(thread.name);
+			}));
+		  
+			const threadsByParent = {};
+			threads.forEach(t => {
+			  if ( ! threadsByParent[ t.parent.name ] ) threadsByParent[ t.parent.name ] = [];
+			  threadsByParent[t.parent.name].push(t);
+			});
+			const threadList = Object.entries(threadsByParent).map(([parentName, threadList]) => {
+			  const threadListStr = threadList.map(t => `[${t.name}](https://discord.com/channels/${interaction.guild.id}/${t.id})`).join('\n');
+			  return `**${parentName}**\n${threadListStr}`;
+			}).join('\n\n');
+		  
+			let message = subcommand.charAt(0).toUpperCase() + subcommand.slice(1);
+			if (subcommand === 'all') {
+			  message = 'Active and archived';
+			}
+		  
+			await interaction.reply({
+			  content: `${message} threads in ${interaction.guild.name}:\n\n${threadList}`,
+			  ephemeral: true
+			});
+		  }
 };
