@@ -9,7 +9,7 @@
   "author": "sdixon194",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^14.8.0"
+    "discord.js": "^14.12.1"
   },
   "devDependencies": {
     "dotenv": "^16.0.3",
